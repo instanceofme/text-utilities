@@ -1,0 +1,789 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+    <meta http-equiv="Content-type" content="text/html; charset=UTF-8" />
+	<link rel="icon" type="image/png" href="http://streetpc.instanceof.me/wp-content/uploads/Universal.png" />
+	<link rel="stylesheet" href="style.css" type="text/css" />
+	<!--[if gte IE 5]>
+		<style type="text/css">
+			#copy_button {
+				display: none;
+			}
+			#copy_button_ie {
+				cursor: hand;
+			}
+			legend {
+				margin-bottom: 5px;
+			}
+			input[type='button'] {
+				/* IE large buttons un-uglyfication */
+				width: auto;
+				overflow: visible;
+				padding: 0 7px;
+			}
+		</style>
+	<![endif]-->
+
+	<title>Text utilities</title>
+	
+	<script type="text/javascript">
+	//<![CDATA[
+		//alert('Begin plugin load');
+		function $( id ) {
+			return document.getElementById( id );
+		}
+	//]]>
+	</script>
+
+	<script type="text/javascript" src="ZeroClipboard.js"></script>
+	<script type="text/javascript">
+	//<![CDATA[
+	/* ZeroClipboard copy, uses flash. See http://code.google.com/p/zeroclipboard/ */
+	var clip = null;
+	function init_clip() {
+		if( typeof(window.clipboardData) == 'undefined' ) {
+			clip = new ZeroClipboard.Client();
+			clip.setHandCursor( true );
+			clip.addEventListener( 'mouseover', function(client) { clip.setText( $('text').value ); } );
+			clip.glue( 'copy_button' );
+			clip.setCSSEffects( true );
+			window.onresize = function() { clip.reposition(); };
+		}
+	}
+	//]]>
+	</script>
+	
+	<!-- http://pajhome.org.uk/crypt/md5/ -->
+	<script type="text/javascript" src="md4.js"></script>
+	<script type="text/javascript" src="md5.js"></script>
+	<script type="text/javascript" src="sha1.js"></script>
+	<!-- http://ejohn.org/blog/title-capitalization-in-javascript/ -->
+	<script type="text/javascript" src="titleCaps.js"></script>
+	<!-- http://www.webtoolkit.info/javascript-base64.html -->
+	<script type="text/javascript" src="base64.js"></script>
+	<!-- http://blog.stevenlevithan.com/archives/cross-browser-split -->
+	<script type="text/javascript" src="split-fix.js"></script>
+	<!-- Yours truly ^^ -->
+	<script type="text/javascript" src="convert.js"></script>
+	
+	<!-- http://www.openjs.com/scripts/events/keyboard_shortcuts/ -->
+	<script type="text/javascript" src="shortcut.js"></script>
+
+	<!-- http://www.openjs.com/scripts/events/keyboard_shortcuts/ -->
+	<script type="text/javascript" src="jsprettify.js"></script>
+
+	<script type="text/javascript">
+	//<![CDATA[
+
+		// init
+		b64pad = "=";	// for md4/md5/sha-1 base64 encoding
+		String.prototype.trim = function() {
+			return this
+				.replace(/^\s\s*/, '')	// ltrim
+				.replace(/\s\s*$/, '')	//rtrim		
+			;
+		};
+		String.prototype.unixify = function() {
+			return this.replace( /\r?\n|\r/g, '\n' );
+		};
+		String.prototype.lines = function( fn ) {
+			var s = this.trim().split( '\n' );
+			if( typeof(fn) == 'function' )	// apply fn to each lines
+				return s.map( fn ).join( '\n' );
+			else	// no function => return lines array
+				return s;
+		};
+		String.prototype.isNumeric = function() {
+			// see http://stackoverflow.com/questions/18082/validate-numbers-in-javascript-isnumeric
+			return (this - 0) == this && this.length > 0;
+		};
+		String.prototype.wordwrap = function ( int_width, str_break, cut ) {
+			// derived from http://kevin.vanzonneveld.net/techblog/article/javascript_equivalent_for_phps_wordwrap/
+			// +   original by: Jonas Raoni Soares Silva (http://www.jsfromhell.com)
+			// +   improved by: Nick Callen, Jonas Raoni Soares Silva, Kevin van Zonneveld, Sakimori, Michael Grier
+			var m = ((arguments.length >= 1) ? arguments[0] : 75   );
+			var b = ((arguments.length >= 2) ? arguments[1] : "\n" );
+			var c = ((arguments.length >= 3) ? arguments[2] : false);
+			var i, j, l, s, r;
+			if (m < 1 || isNaN( m ) )
+				return this;
+			for (i = -1, l = (r = this.unixify().split("\n")).length; ++i < l; r[i] += s)
+				for(s = r[i], r[i] = ""; s.length > m; r[i] += s.slice(0, j) + ((s = s.slice(j)).length ? b : ""))
+					j = c == 2 || (j = s.slice(0, m + 1).match(/\S*(\s)?$/))[1] ? m : j.input.length - j[0].length || c == 1 && m || j.input.length + (j = s.slice(m).match(/^\S*/)).input.length;
+			return r.join("\n");
+		}
+		String.prototype.cut = function ( int_width, str_break ) {
+			var m = ((arguments.length >= 1) ? arguments[0] : 75   );
+			var b = ((arguments.length >= 2) ? arguments[1] : "\n" );
+			var i, j, l, s, r;
+			if (m < 1 || isNaN( m ) )
+				return this;
+			j = new RegExp( '.{' + m + '}', 'g' );
+			for (i = 0, l = (r = this.unixify().split("\n")).length, s=""; i < l; i++)
+				s += ( i > 0 ? "\n" : "" ) + r[i].replace( j, '$&' + b );
+			return s;
+		}
+		function isArray(o) {
+			return Object.prototype.toString.call(o) === '[object Array]'; 
+		}
+		Array.prototype.filter = function( fn ) {
+			if(typeof fn == 'undefined')
+				fn = function(i) {return i;};
+			var a = [];
+			for( var i=0; i<this.length; i++ )
+				if( fn( this[i] ) )
+					a.push( this[i] );
+			return a;
+		};
+		Array.prototype.map = function( fn ) {
+			var a = [];
+			for( var i=0; i<this.length; i++ )
+				a.push( fn( this[i] ) );
+			return a;
+		};
+		Array.prototype.duplicates = function() {
+			var l = {};
+			for( var i=0; i<this.length; i++ )
+				l[this[i]] = Object.prototype.hasOwnProperty.call(l, this[i]);
+			return l;
+		};
+		
+		function objContains(o, k) {
+			return Object.prototype.hasOwnProperty.call(o, k)
+		}
+		
+		function import_script( src  ){
+			if( src.trim().length == 0 )
+				return false;
+			var script = document.createElement('SCRIPT');
+			script.type = 'text/javascript';
+			script.src = src + ( src.indexOf('?') != -1 ? '&' : '?' ) + '__actualizer=' + ( Math.random() );
+			document.getElementsByTagName('head')[0].appendChild(script);
+			return true;
+		}
+
+		function getOptionValue( field ) {
+			var i=0;
+			if( typeof NodeList != 'undefined' && field instanceof NodeList ) {
+				for( i=0; i < field.length; i++ )
+					if( field.item(i).checked )
+						return field.item(i).value;
+				return null;
+			}
+			for( i=0; i<field.length; i++ )
+				if( field[i].checked )
+					return field[i].value;
+			return null;
+		}
+		function setOptionValue( field, value ) {
+			var i=0;
+			if( typeof NodeList != 'undefined' && field instanceof NodeList )
+				for( i=0; i < field.length; i++ )
+					field.item(i).checked = field.item(i).value == value;
+			else for( i=0; i<field.length; i++ )
+				field[i].checked = field[i].value == value;
+		}
+
+		function apply_fn( fn, _this, args ) {
+			if( typeof _this == 'undefined' ) _this = this;
+			if( typeof args == 'undefined' ) args = [];
+			else if( typeof args != 'object' || ! (args instanceof Array) ) {
+				var tmp = [];
+				for( var j=2; j<arguments.length; j++ )
+					tmp.push( arguments[j] );
+				args = tmp;
+			}
+			var i = $('text').value.unixify(), o = null;
+			try {
+				o = _this == true ? fn.apply( i, args ) : fn.apply( _this, [i].concat( args ) );
+				$('text').value = o;
+				$('text').focus();
+				return true;
+			} catch( e ) {
+				alert( "Oops! A \"" + e.name + "\" exception occured.\n" + e.message );
+				return false;
+			}
+		}		
+
+		function toggle_display( id, default_hide, display ) {
+			default_hide = typeof(default_hide) != 'undefined' ? default_hide : true;
+			display = typeof(display) != 'undefined' ? display : 'block';
+			if( $(id) ) {
+				var show = default_hide ?
+					( $(id).style.display == 'none' )
+					: ( $(id).style.display != display );
+				$(id).style.display = show ? display : 'none';
+				return show;
+			}
+			return null;
+		}
+
+		function switch_case( s ) {
+			return s.split( /([a-z]+)/g ).map(
+					function( l ) {
+						if( typeof l == 'string' )
+							return /^[a-z]+$/.test(l) ? l.toUpperCase() : l.toLowerCase();
+						else return '';
+					}
+				).join( '' );
+		}
+		function camel_case( s ) {
+			return s.split( /(\W+)/g ).map(
+					function( l ) {
+						if( typeof l == 'string' )
+							return /^\w+$/.test(l) ? l.substr( 0, 1 ).toUpperCase() + l.substr( 1 ).toLowerCase() : l;
+						else return '';
+					}
+				).join( '' );
+		}
+		
+		function setTextareaSelection( ta, start, len ) {
+			ta.focus();
+			if( ! document.selection ) {	// Geck / WebKit / Opera...
+				ta.selectionStart = start;
+				ta.selectionEnd = start + len;
+			} else {	// IE selection model
+				var range = ta.createTextRange();
+				range.collapse( true );
+				range.moveStart( 'character', start - 1 );
+				range.moveEnd( 'character', len );
+				range.select();
+			}
+		}
+
+		function text_stats() {
+			s = $('text').value.unixify();
+			msg = "Char count: " + s.length;
+			msg += "\nWord count: " + s.split( /\W+/ ).filter( function(s){ return /\w/.test(s); } ).length;
+			alert( msg );
+		}
+		
+		function humanStringCompare(a, b) {
+			var an = a.isNumeric(), bn = b.isNumeric();
+			if(an && bn) // all numbers
+				return a - b;
+			if(an || bn) // xor since we're here
+				return an ? -1 : 1;	// nums before letters
+			return a < b ? -1 : 1; // basic string compare
+		}
+
+		/**
+		 * Simple UTF-8 encode/decode
+		 * http://ecmanaut.blogspot.com/2006/07/encoding-decoding-utf8-in-javascript.html
+		 **/
+		var Utf8 = {
+			encode : function ( s ) {
+				return unescape( encodeURIComponent( s ) );
+			},
+			decode : function ( s ) {
+				return decodeURIComponent( escape( s ) );
+			}
+		};
+		
+		var Xml = {
+			escape : function(s) {
+				return s
+					.replace(/&/g,'&amp;')
+					.replace(/</g,'&lt;')
+					.replace(/>/g,'&gt;')
+					.replace(/"/g,'&quot;')
+					.replace(/'/g,'&apos;');
+			},
+			unescape : function(s) {
+				return s
+					.replace(/&apos;/g,'\'')
+					.replace(/&quot;/g,'"')
+					.replace(/&gt;/g,'>')
+					.replace(/&lt;/g,'<')
+					.replace(/&amp;/g,'&');
+			}
+		};
+
+		Search = function() {
+			this.flags = 'gi';
+			this.mode = 'replace';
+			this.reg = true;
+			this.search = null;
+			this.re = null;
+			this.input = null;
+			this.output = null;
+			this.with_ = null;
+		};
+		Search.prototype.process = function ( input, action ) {
+			this.search = Search.controls.search.value.unixify();
+			this.flags = Search.controls.flags.value;
+			this.reg = Search.controls.reg.checked;
+			if( ! this.reg )	// escapes regexp chars to emulate "normal" search
+				this.search = this.search.replace( /[\/\^\$\\\{\}\(\)\+\*\|\-\.\?\!\=\:\<\>\\\"]/g, '\\$&' );
+			// and _then_, we have to convert line returns & tabs
+			this.search = this.search.replace(/\n/g, '\\n').replace(/\t/g, '\\t');
+			this.mode = getOptionValue( action );
+			if( this.mode != 'replace' && this.flags.indexOf('g') == -1 )
+				this.flags += 'g';	// force global
+			this.re = new RegExp( this.search, this.flags );
+			this.input = input;
+			this.output = "";
+			this.with_ = Search.controls.with_.value.unixify();
+			switch( this.mode ) {
+				case 'replace':
+				default:
+					if( ! this.reg )	// escapes regexp char '$' to emulate "normal" replace
+						this.with_ = this.with_.replace( /\$/g, '$$$$' );
+					this.output = this.input.replace( this.re, this.with_ );
+					break;
+				case 'count':
+					var match = this.input.match( this.re );
+					match = ( match != null && typeof match.length != 'undefined' ? match.length : 0 );
+					alert( 'Found ' + match + ' match' + ( match > 1 ? 'es' : '' ) + '.'  );
+					return this.input;
+					break;
+				case 'extract':
+					//shortcut for split + replace the rest with new line
+					this.mode = 'split';
+					this.with_ = Search.return_nl;
+				case 'apply':
+				case 'split':
+					if( typeof( this.with_ ) != 'function' ) {
+						try {
+							eval( 'this.with_ = function(){' + this.with_ + '}();' );
+						} catch( e ) {
+							alert( e );
+							this.with_ = null;
+						}
+					}
+					if( typeof( this.with_ ) != 'function' ) {
+						alert( "Return value of eval()'d code is not a function." );
+						return this.input;
+					}
+					var apply = (this.mode == 'apply');
+					if( apply ) {
+						// since JS 1.3, you can specify a function as second parameter
+						this.output = this.input.replace( this.re, this.with_ );
+						break;
+					}
+					RegExp.lastIndex = 0;
+					var match = null, lastIndex = 0, args = null;
+					while( ( match = this.re.exec( this.input ) ) != null ) {
+						/*if( apply ) {
+							this.output += this.input.slice( lastIndex, match.index );
+							args = match;
+							args.push( match.index );
+							args.push( this.input );
+						} else*/
+							args = [ this.input.slice( lastIndex, match.index ), lastIndex, this.input ];
+						this.output += this.with_.apply( this, args );
+						/*if( ! apply )*/
+							this.output += match[0];
+						lastIndex = match.index + match[0].length;
+					}
+					/*if( apply )
+						this.output += this.input.slice( lastIndex );
+					else*/
+						this.output += this.with_( this.input.slice( lastIndex ), lastIndex, this.input );
+					break;
+			}
+			return this.output;
+		};
+		Search.return_nl = function(){return '\n';};
+		Search.process = Search.prototype.process;
+		Search.parseFlags = function(field) {
+			var value = field.value.toLowerCase().replace( /[^gim]/g, '' );
+			Search.controls.flag_g.checked = (value.indexOf('g')!=-1 || !Search.controls.action_replace.checked);
+			if( ! Search.controls.action_replace.checked && value.indexOf('g')==-1 )
+				value += 'g';
+			Search.controls.flag_i.checked = (value.indexOf('i')!=-1);
+			Search.controls.flag_m.checked = ( value.indexOf('m')!=-1 && Search.controls.reg.checked );
+			if( ! Search.controls.reg.checked && value.indexOf('m')!=-1 )
+				value = value.replace( /m/gi, '' );
+			field.value = value;
+		};
+		Search.fn_example = "return function (s) {\n\t//customize your function here\n\treturn s;\n};";
+		Search.chooseAction = function( which ) {
+			switch( which) {
+				case 'replace':
+				default:
+					Search.controls.with_.disabled = false;
+					Search.controls.flag_g.disabled = false;
+					if( Search.controls.with_.value == Search.fn_example )
+						Search.controls.with_.value = '';
+					break;
+				case 'count':
+				case 'extract':
+					Search.controls.with_.disabled = true;
+					Search.controls.flag_g.disabled = true;
+					Search.controls.flag_g.checked = true;
+					Search.parseFlags( Search.controls.flags );
+					break;
+				case 'apply':
+				case 'split':
+					Search.controls.with_.disabled = false;
+					Search.controls.flag_g.disabled = true;
+					Search.controls.flag_g.checked = true;
+					Search.parseFlags( Search.controls.flags );
+					if( Search.controls.with_.value.trim().length == 0 )
+						Search.controls.with_.value = Search.fn_example;
+					// select the "//customize..." (first comment line)
+					var match = Search.controls.with_.value.match( /^(\s*)(\/\/.*?)$/m );
+					if( match && match.index != -1 )
+						setTextareaSelection( Search.controls.with_, match.index + match[1].length, match[2].length );
+					break;
+			}
+		}
+		Search.init = function() {
+			Search.controls = {
+				search: $('regexp_search'),
+				with_: $('regexp_with'),
+				flags: $('regexp_flags'),
+				flag_i: $('regexp_flag_i'),
+				flag_g: $('regexp_flag_g'),
+				flag_m: $('regexp_flag_m'),
+				reg: $('regexp_reg'),
+				action_replace: $('regexp_action_replace'),
+				action_count: $('regexp_action_count'),
+				action_apply: $('regexp_action_apply'),
+				action_count: $('regexp_action_split'),
+				action_split: $('regexp_action_extract')
+			};
+		};
+		Search.prepare_js_fn = function(){
+			$('regexp').style.display = 'block';
+			$('regexp_reg').checked = true;
+			$('regexp_reg').onclick();
+			// "." doesn't match new line
+			$('regexp_search').value = "^(?:.|\\n)*$";
+			setOptionValue( $('form').regexp_action, 'apply' );
+			$('regexp_action_apply').onclick();
+			$('regexp_flags').value = 'g';
+			$('regexp_flags').onchange();
+		};
+		
+		
+		function load_shortcuts() {
+			shortcut.add( 'Ctrl+Shift+T', function(){ $('text').focus(); } );
+			shortcut.add( 'Ctrl+Shift+F', function(){ $('regexp').style.display = 'block'; $('regexp_search').focus(); } );
+			shortcut.add( 'Ctrl+Shift+H', function(){ $('hash').style.display = 'block'; $('hash_go').focus(); } );
+			shortcut.add( 'Ctrl+Shift+J', $('js_eval').onclick ); shortcut.add( 'Ctrl+Shift+E', $('js_eval').onclick );
+			shortcut.add( 'Ctrl+Shift+B', function(){ $('base').style.display = 'block'; $('base_bytes_go').focus(); } );
+			shortcut.add( 'Ctrl+Shift+N', function(){ $('base').style.display = 'block'; $('base_nums_go').focus(); } );
+		}
+		
+		function load_scripts() {
+			var s = document.location.search.slice( 1 );
+			s = s.split('&');
+			for( var i=0; i<s.length; i++ ) {
+				var p = s[i].split( '=', 2 );
+				if( p[0] == 'load' && typeof p[1] == 'string' && p[1] != '' )
+					import_script( decodeURIComponent( p[1] ) );
+			}
+		}
+		//alert('Plugins sucessfully loaded ');
+		
+		function init_page() {
+			init_clip();
+			Search.init();
+			load_shortcuts();
+			load_scripts();
+			var s = document.location.hash;
+			if( ! s )
+				s = '#geek_utils';
+			toggle_display( s.substring(1), false );
+			$('text').focus();
+		}
+	
+	//]]>
+	</script>
+	
+</head>
+<body onload="init_page();">
+    <h1>Text utilities</h1>
+	
+<form onsubmit="return false;" action="" id="form">
+	<fieldset>
+	    <legend onclick="$('text').focus();">Input</legend>
+		<div>
+			<textarea id="text" rows="10" cols="40"></textarea>
+			<!--br /-->
+			<!-- copy for IE: -->
+			<!--[if gte IE 5]>
+				<input type="button" id="copy_button_ie" value="Copy to Clipboard" onclick="window.clipboardData.setData('Text', $('text').value );" />
+			<![endif]-->
+			<div id="copy_button">
+				Copy to Clipboard
+			</div>
+		</div>
+	</fieldset>
+	
+	<p style="text-align: center;">Click fieldset legends below to show/hide.</p>
+
+	<fieldset>
+	    <legend onclick="toggle_display( 'geek_utils', true );" accesskey="0">Geek utilities &#x25bc;</legend>
+	<div class="fieldset-wrap" id="geek_utils">
+		<p>
+			<input type="button" onclick="apply_fn(escape);" value="Escape" title="Escapes &quot;%&gt;&lt;[\]^`{|}#$&amp;,:;=?!'()~ and space" />
+			<input type="button" onclick="apply_fn(unescape);" value="Unescape" title="Unescapes &quot;%&gt;&lt;[\]^`{|}#$&amp;,:;=?!'()~ and space" />
+			<input type="button" onclick="apply_fn(encodeURI);" value="Encode URI" title="Encodes %&gt;&lt;[\]^`{|}" />
+			<input type="button" onclick="apply_fn(decodeURI);" value="Decode URI" title="Decodes %&gt;&lt;[\]^`{|}" />
+			<input type="button" onclick="apply_fn(encodeURIComponent);" value="Encode URI Comp." title="Encodes %&gt;&lt;[\]^`{|}#$&amp;+,/:;=?" />
+			<input type="button" onclick="apply_fn(decodeURIComponent);" value="Decode URI Comp." title="Decodes %&gt;&lt;[\]^`{|}#$&amp;+,/:;=?" />
+			<br />
+			<input type="button" onclick="apply_fn(Xml.escape);" value="Escape XML" title="Escapes &amp;&quot;&gt;&lt;&apos;" />
+			<input type="button" onclick="apply_fn(Xml.unescape);" value="Unescape XML" title="Unescapes &amp;&quot;&gt;&lt;&apos;" />
+			<input type="button" onclick="apply_fn(Utf8.encode);" value="UTF-8 Encode" />
+			<input type="button" onclick="apply_fn(Utf8.decode);" value="UTF-8 Decode" />
+			<input type="button" onclick="apply_fn(Base64.encode);" value="Base64 Encode" />
+			<input type="button" onclick="apply_fn(Base64.decode);" value="Base64 Decode" />
+			<br />
+			<input type="button" onclick="apply_fn(String.prototype.toUpperCase, true);" value="UPPERCASE" />
+			<input type="button" onclick="apply_fn(String.prototype.toLowerCase, true);" value="lowercase" />
+			<input type="button" onclick="apply_fn(switch_case);" value="sWITCH cASE" />
+			<input type="button" onclick="apply_fn(camel_case);" value="Camel Case" />
+			<input type="button" onclick="apply_fn(titleCaps);" value="Title Case" />
+			<br />
+			<input type="button" onclick="apply_fn(String.prototype.wordwrap, true, [parseInt($('wordwrap_col').value), '\n', false]);" value="Word Wrap @&#x25ba;" title="Word wrap at the specified width. To break longer words, hit 'cut' afterwards." />
+			<input type="text" id="wordwrap_col" size="2" maxlength="4" value="76" />
+			<input type="button" onclick="apply_fn(String.prototype.cut, true, [parseInt($('wordwrap_col').value), '\n']);" value="Cut @&#x25c4;" title="Cut at the specified width" />
+			<input style="margin-left: 20px;" type="button" onclick="apply_fn(String.prototype.trim, true);" value="Trim string" title="Remove leading and trailing whitespaces" />
+			<input type="button" onclick="apply_fn(jsprettify.prettifyStr);" value="&ldquo;Prettify punctuation&hellip;&rdquo;" title="Transforms straight quotes &quot;, hyphen-dashes --/---, and three dots... into their correct equivalents &ldquo;curly quotes&rdquo;, en/em-dashes &ndash;/&mdash;, and horizontal ellipsis&hellip;" />
+			<input style="margin-left: 20px;" type="button" onclick="text_stats();" value="Text Statistics" title="Words &amp; characters count" />
+			<br />
+			Lines
+			<input type="button" style="margin-left: 15px;" onclick="apply_fn(function(s){return s.lines(function(l){return l.trim();});});" value="Trim" title="Remove leading and trailing whitespaces on each line" />
+			<input type="button" style="margin-left: 15px;" onclick="apply_fn(function(s){var l=s.lines(),d=l.duplicates(),b={}; return l.filter(function(k){return (!d[k] || (!objContains(b, k) && (b[k]=true)));}).join('\n');});" value="Remove duplicates" title="Remove duplicate lines (keeping only first occurrence)" />
+			<input type="button" onclick="apply_fn(function(s){var l=s.lines(),d=l.duplicates(),b={}; return l.filter(function(k){return (d[k] && (!objContains(b, k) && (b[k]=true)));}).join('\n');});" value="Keep only duplicates" title="Remove non-duplicate lines (keeping only one copy of duplicate lines)" />
+			<input type="button" style="margin-left: 15px;" onclick="apply_fn(function(s){return s.lines().sort(humanStringCompare).join('\n');});" value="Alphabetic sort" />
+			<input type="button" onclick="apply_fn(function(s){return s.lines().reverse().join('\n');});" value="Reverse sort" title="Reverse current lines sort" />
+		</p>
+	</div></fieldset>
+	
+	<fieldset>
+		<legend onclick="toggle_display( 'hash', false );">Hash &#x25bc;</legend>
+	<div class="fieldset-wrap" id="hash">
+		<p>
+			<span class="label">Algorithm</span>
+			<input type="radio" name="hash_algorithm" id="hash_algorithm_sha1" value="sha1" />
+			<label for="hash_algorithm_sha1" class="check"><acronym title="Secure Hash Algorythm">SHA-1</acronym></label>
+			<input type="radio" name="hash_algorithm" id="hash_algorithm_md5" value="md5" checked="checked" />
+			<label for="hash_algorithm_md5" class="check"><acronym title="Message Digest 5">MD5</acronym></label>
+			<input type="radio" name="hash_algorithm" id="hash_algorithm_md4" value="md4" />
+			<label for="hash_algorithm_md4" class="check"><acronym title="Message Digest 4">MD4</acronym></label>
+		</p>
+		<p class="attached">
+			<span class="label">Output</span>
+			<input type="radio" name="hash_out" id="hash_out_hex" value="hex" checked="checked" />
+			<label for="hash_out_hex" class="check">Hexadecimal</label>
+			<input type="radio" name="hash_out" id="hash_out_str" value="str" />
+			<label for="hash_out_str" class="check unsafe" title="Not safe, it is recommended to use Hexadecimal or Base64 instead">String bytes</label>
+			<input type="radio" name="hash_out" id="hash_out_b64" value="b64" />
+			<label for="hash_out_b64" class="check">Base64 bytes</label>
+		</p>
+		<p class="attached">
+			<input type="button" id="hash_go" class="label-align" onclick="apply_fn(eval(getOptionValue(this.form.hash_out) + '_' + getOptionValue(this.form.hash_algorithm)));" value="Hash" />
+		</p>
+	</div></fieldset>
+
+	<fieldset>
+		<legend onclick="toggle_display( 'regexp', false );">Find, regexp &amp; replace &#x25bc;</legend>
+	<div class="fieldset-wrap" id="regexp">
+		<p>
+			<label for="regexp_search">Search text / regular expression</label>
+			<textarea id="regexp_search" cols="40" rows="3"></textarea><br />
+			<input type="checkbox" id="regexp_reg" class="label-align" checked="checked" onclick="( $('regexp_flag_m').disabled = ! this.checked ) &amp;&amp; ( $('regexp_flag_m').checked = false ) || $('regexp_flag_m').onclick();" />
+			<label for="regexp_reg" class="check">Regular expression (JavaScript implementation)</label>
+			<a href="http://www.visibone.com/products/ebk14-15_850.jpg">VisiBone reference</a>
+		</p>
+		<p class="attached" id="regexp_flags_wrap">
+			<label for="regexp_flags">Search options</label>
+			<input type="text" id="regexp_flags" value="gi" onchange="Search.parseFlags(this);" onkeyup="Search.parseFlags(this);" /><br />
+			<input type="checkbox" class="label-align" id="regexp_flag_g" checked="checked" onclick="$('regexp_flags').value=$('regexp_flags').value.replace(this.checked ? /^([^g]*)$/:/g/gi, this.checked ? 'g$1':'');" />
+			<label for="regexp_flag_g" class="check">Multiple match</label>
+			<input type="checkbox" id="regexp_flag_i" checked="checked" onclick="$('regexp_flags').value=$('regexp_flags').value.replace(this.checked ? /^([^i]*)$/:/i/gi, this.checked ? 'i$1':'');" />
+			<label for="regexp_flag_i" class="check">Case insensitive</label>
+			<input type="checkbox" id="regexp_flag_m" onclick="$('regexp_flags').value=$('regexp_flags').value.replace(this.checked ? /^([^m]*)$/:/m/gi, this.checked ? 'm$1':'');" />
+			<label for="regexp_flag_m" class="check">^$ match line limits</label>
+		</p>
+		<p>
+			<label for="regexp_with">Action on matches</label>
+			<input type="radio" name="regexp_action" id="regexp_action_replace" value="replace" checked="checked" onclick="Search.chooseAction(this.value);" />
+			<label for="regexp_action_replace" class="check">Replace with &#x25bc;</label><br />
+			<input class="label-align" type="radio" name="regexp_action" id="regexp_action_count" value="count" onclick="Search.chooseAction(this.value);" />
+			<label for="regexp_action_count" class="check">Count matches</label><br />
+			<input class="label-align" type="radio" name="regexp_action" id="regexp_action_extract" value="extract" onclick="Search.chooseAction(this.value);" />
+			<label for="regexp_action_extract" class="check">Extract matches (one per line)</label><br />
+			<input class="label-align" type="radio" name="regexp_action" id="regexp_action_apply" value="apply" onclick="Search.chooseAction(this.value);" />
+			<label for="regexp_action_apply" class="check">Apply JS function &#x25bc; to matches (arguments = matched sub-patterns)</label><br />
+			<input class="label-align" type="radio" name="regexp_action" id="regexp_action_split" value="split" onclick="Search.chooseAction(this.value);" />
+			<label for="regexp_action_split" class="check">Apply JS function &#x25bc; to pieces (split using matches as separator)</label><br />
+			<textarea class="label-align" id="regexp_with" cols="40" rows="5"></textarea>
+		</p>
+		<p>
+			<input type="button" class="label-align" value="Proceed" onclick="apply_fn(Search.process, new Search, this.form.regexp_action);" />
+		</p>
+	</div></fieldset>
+
+	<fieldset>
+		<legend onclick="toggle_display( 'js', false );">JavaScript &#x25bc;</legend>
+	<div class="fieldset-wrap" id="js">
+		<p>
+			<input type="button" id="js_eval" value="Evaluate JavaScript" onclick="eval($('text').value);" title="Evaluate the input as JavaScript" />
+			<input type="button" value="Load scripts" onclick="apply_fn(function(s){ s.split(/\n/).map(import_script); return '';});" title="Load scripts given as URLs in the input, one per line" />
+			<br />
+			<input type="button" value="Make Bookmarklet &#x25ba;" onclick="$('bookmarklet').href = 'javascript:void((function(){' + $('text').value.unixify().replace(/\n/g,' ') + '})());';" title="Transform the link on the right as a bookmarklet containing the javascript code you gave as input." />
+			<span style="font-size: 16px; font-weight: 100; line-height: 20px; margin-left: 10px;">
+				<a href="javascript:void(0);" id="bookmarklet" onclick="return confirm('Test bookmarklet now ?');" title="Drag me to your bookmark bar, or right-click me and choose &ldquo;Add to bookmarks/favorites&rdquo;">Bookmarklet</a>
+				<a href="http://en.wikipedia.org/wiki/Bookmarklet" title="Bookmarklet Wikipedia entry" style="margin-left: 10px; color: #999;">?</a>
+			</span>
+			<br />
+			<input type="button" value="Apply a JS function to the whole text" onclick="Search.prepare_js_fn();" title="Click then type in your function" />
+		</p>
+	</div></fieldset>
+
+	<fieldset>
+		<legend onclick="toggle_display( 'base', false );">Base convert &#x25bc;</legend>
+	<div class="fieldset-wrap" id="base">
+		<p>
+			<span class="label">Convert bytes</span><br />
+			<span class="label" style="text-align: right">From</span>
+			<input type="radio" name="base_bytes_from" value="str" id="base_bytes_from_str" checked="checked" />
+			<label for="base_bytes_from_str" class="check">string</label>
+			<input type="radio" name="base_bytes_from" value="hex" id="base_bytes_from_hex" />
+			<label for="base_bytes_from_hex" class="check">hexadecimal</label>
+			<input type="radio" name="base_bytes_from" value="bin" id="base_bytes_from_bin" />
+			<label for="base_bytes_from_bin" class="check">binary</label>
+			<br />
+			<span class="label" style="text-align: right">To</span>
+			<input type="radio" name="base_bytes_to" value="str" id="base_bytes_to_str" onclick="($('base_bytes_space').disabled = this.checked) &amp;&amp; ($('base_bytes_space').selectedIndex = 0);" />
+			<label for="base_bytes_to_str" class="check">string</label>
+			<input type="radio" name="base_bytes_to" value="hex" id="base_bytes_to_hex" checked="checked" onclick="if(this.checked) $('base_bytes_space').disabled = false;" />
+			<label for="base_bytes_to_hex" class="check">hexadecimal</label>
+			<input type="radio" name="base_bytes_to" value="bin" id="base_bytes_to_bin" onclick="if(this.checked) $('base_bytes_space').disabled = false;" />
+			<label for="base_bytes_to_bin" class="check">binary</label>
+			<br />
+			<span class="label" style="text-align: right">Add spaces around</span>
+			<select id="base_bytes_space">
+				<option value="0">None</option>
+				<option value="1">Bytes</option>
+				<option value="2">Words</option>
+				<option value="4">DWords</option>
+				<option value="8">QWords</option>
+			</select>
+			<input id="base_bytes_go" type="button" value="Convert" style="margin-left: 20px;" onclick="if(apply_fn(eval('Convert.bytes_' + getOptionValue(this.form.base_bytes_from) + '2' + getOptionValue(this.form.base_bytes_to)), false, $('base_bytes_space').value)){ var t; if(t=getOptionValue(this.form.base_bytes_from)){setOptionValue(this.form.base_bytes_from, getOptionValue(this.form.base_bytes_to)); setOptionValue(this.form.base_bytes_to, t);}}" />
+			<!-- todo switch from/to afterward -->
+			<span class="label">Parse &amp; convert numbers</span><br />
+			<label for="base_nums_from" style="text-align: right">From base</label>
+			<input type="text" value="10" id="base_nums_from" maxlength="2" size="2" />
+			<label for="base_nums_to" class="inline">To base</label>
+			<input type="text" value="16" id="base_nums_to" maxlength="2" size="2" />
+			<br />
+			<input id="base_nums_go" type="button" value="Convert" class="label-align" onclick="apply_fn(Convert.numbers, false, parseInt($('base_nums_from').value), parseInt($('base_nums_to').value));" />
+		</p>
+	</div></fieldset>
+</form>
+
+	<h2 class="notes">Notes on using this page</h2>
+	<ul class="notes">
+		<li>Click <span class="legend">fieldset legends &#x25bc;</span> above to toggle show/hide.</li>
+		<li><span title="You'll notice the &ldquo;help&rdquo; cursor on those">Some controls have tooltips with details.</span></li>
+		<li>
+			<strong>Line endings</strong> are standardized as LFs (<code>&quot;\n&quot;</code> or <code>0x0A</code> if you prefer)
+			to be cross-browser, including before hashing.
+		</li>
+		<li>
+			The JavaScript <code>String.split()</code> function is overriden and should be cross-browser compatible with
+			<a href="http://www.ecma-international.org/publications/standards/Ecma-262.htm">ECMA-262 v3</a>
+			specifications (thanks to Stephen Levithan, see credits below).
+			Your browser's original split function remains accessible with <code>String._$$split()</code>.
+		</li>
+		<li>
+			You can bookmark this page and <strong>automatically load scripts</strong> by adding <code>load=script_url</code> GET parameters
+			to the current URL (<code><strong style="color: #999">?</strong>load=url1<strong style="color: #999">&amp;</strong>load=url2</code>
+			should work fine). You can also bookmark with the <code>#hash</code> of the wanted control set to directly activate it on page load:
+			<a href="#geek_utils">#geek_utils</a>, <a href="#hash">#hash</a>, <a href="#regexp">#regexp</a>, <a href="#js">#js</a>, <a href="#base">#base</a>.
+		</li>
+		<li>
+			You can save this page to use it locally (Mozilla users, remember to choose &ldquo;Complete HTML&rdquo; file type)
+			but the Flash copy button won't work, so only IE users will be able to click-copy.
+		</li>
+		<li>
+			There are some <strong>keyboard shortcuts</strong> that you may want to use:
+		</li>
+		<ul>
+			<li><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>T</kbd> focuses the input textarea</li>
+			<li><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>J</kbd> and <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>E</kbd> both evaluate the input as JavaScript</li>
+			<li><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>F</kbd> expands the search/replace fieldset and focuses the search textarea</li>
+			<li><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>H</kbd> expands the hash fieldset and focuses the “Hash” button</li>
+			<li><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>B</kbd> expands the base conversion fieldset and focuses the byte conversion button</li>
+			<li><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>N</kbd> expands the base conversion fieldset and focuses the base conversion button</li>
+		</ul>
+		<li>
+			When using the function regex/search-replace, the arguments for the functions are:
+		</li>
+		<ul>
+			<li><em>1:</em> The matched expression</li>
+			<li><em>2 to n:</em> The matched subpatterns (not applicable if not in regex mode or when applying the function to pieces)</li>
+			<li><em>n+1:</em> The offset of the matched expression/piece in the original input text</li>
+			<li><em>n+2:</em> The original input text</li>
+		</ul>
+	</ul>
+
+	<h2 class="bugs">Known bugs</h2>
+	<ul class="bugs">
+		<li>
+			<a href="http://www.regular-expressions.info/javascript.html" title="JavaScript regular expression flavor">Javascript's regex</a>
+			limitations, like lack of Unicode or lookbehind support
+		</li>
+		<li>Hence, incorrect accented or non-Latin alphabet support, affecting some word-based features (title/camel case, words counting, etc.).</li>
+	</ul>
+
+	<h2 class="credits">Credits for JavaScript implementations</h2>
+	<ul class="credits">
+		<li>
+			The copy button uses (except for Internet Explorer) the
+			<a href="http://code.google.com/p/zeroclipboard/">ZeroClipboard Flash Plugin</a>
+			(requires Flash Player &ge; 9)
+		</li>
+		<li>
+			The Title Case function is <a href="http://ejohn.org/blog/title-capitalization-in-javascript/">John Resig's</a>,
+			from <a href="http://daringfireball.net/2008/05/title_case">an idea of John Gruber</a>
+		</li>
+		<li>
+			The Prettify Punctuation function is provided by <a href="https://code.google.com/p/jsprettify/">JsPrettify</a>
+		</li>
+		<li>Hashing implementations are <a href="http://pajhome.org.uk/crypt/md5/">Paul Johnson's</a></li>
+		<li>Base64 implementation is based on <a href="http://www.webtoolkit.info/javascript-base64.html">WebToolkit's</a></li>
+		<li>
+			UTF-8 encoding/decoding uses
+			<a href="http://ecmanaut.blogspot.com/2006/07/encoding-decoding-utf8-in-javascript.html">Johan Sundström's trick</a>
+		</li>
+		<li>
+			Internal use of <a href="http://blog.stevenlevithan.com/archives/cross-browser-split">
+			Steven Levithan's cross-browser split</a> implementation
+		</li>
+		<li>
+			The keyboard shortcuts are mapped using shortcut.js by
+			<a href="http://www.openjs.com/scripts/events/keyboard_shortcuts/" title="Handling Keyboard Shortcuts in JavaScript">Binny V A on OpenJS</a>
+		</li>
+		<li>
+			The Word-Wrap function is
+			<a href="http://kevin.vanzonneveld.net/techblog/article/javascript_equivalent_for_phps_wordwrap/">
+				Kevin van Zonneveld's
+			</a>, original from
+			<a href="http://jsfromhell.com/string/wordwrap">
+				Jonas Raoni Soares Silva
+			</a>
+		</li>
+	</ul>
+	<p id="license">
+		 <a href="http://validator.w3.org/check?uri=referer" rel="validate" style="display: block; float: left; margin: 0 5px 0 0;">
+		 	<img src="http://www.w3.org/Icons/valid-xhtml10-blue" alt="Valid XHTML 1.0 Strict" height="31" width="88" />
+		</a>
+		<a rel="license" href="http://creativecommons.org/licenses/by/2.0/fr/" style="display: block; float: left; margin: 0 5px 0 0;">
+			<img alt="Creative Commons License" src="http://creativecommons.org/images/public/somerights20.png" />
+		</a>
+		<a href="http://instanceof.me/text/" rel="canonical">Text Utilities</a>
+		by <a xmlns:cc="http://creativecommons.org/ns#" href="http://streetpc.instanceof.me/" rel="cc:attributionURL">Adrien Lavoillotte</a>
+		is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by/2.0/fr/">Creative Commons Attribution 2.0 France License</a>.
+		<br style="clear: none;" />
+		Some algorithm implementations are copyrights of their respective owners (see links above).
+	</p>
+</body>
+</html>
