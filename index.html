@@ -548,8 +548,8 @@
 			<br />
 			Lines
 			<input type="button" style="margin-left: 15px;" onclick="apply_fn(function(s){return s.lines(function(l){return l.trim();});});" value="Trim" title="Remove leading and trailing whitespaces on each line" />
-			<input type="button" style="margin-left: 15px;" onclick="apply_fn(function(s){var l=s.lines(),d=l.duplicates(),b={}; return l.filter(function(k){return (!d[k] || (!objContains(b, k) && (b[k]=true)));}).join('\n');});" value="Remove duplicates" title="Remove duplicate lines (keeping only first occurrence)" />
-			<input type="button" onclick="apply_fn(function(s){var l=s.lines(),d=l.duplicates(),b={}; return l.filter(function(k){return (d[k] && (!objContains(b, k) && (b[k]=true)));}).join('\n');});" value="Keep only duplicates" title="Remove non-duplicate lines (keeping only one copy of duplicate lines)" />
+			<input type="button" style="margin-left: 15px;" onclick="apply_fn(function(s){var l=s.lines(),d=l.duplicates(),b={}; return l.filter(function(k){return (!d[k] || (!objContains(b, k) &amp;&amp; (b[k]=true)));}).join('\n');});" value="Remove duplicates" title="Remove duplicate lines (keeping only first occurrence)" />
+			<input type="button" onclick="apply_fn(function(s){var l=s.lines(),d=l.duplicates(),b={}; return l.filter(function(k){return (d[k] &amp;&amp; (!objContains(b, k) &amp;&amp; (b[k]=true)));}).join('\n');});" value="Keep only duplicates" title="Remove non-duplicate lines (keeping only one copy of duplicate lines)" />
 			<input type="button" style="margin-left: 15px;" onclick="apply_fn(function(s){return s.lines().sort(humanStringCompare).join('\n');});" value="Alphabetic sort" />
 			<input type="button" onclick="apply_fn(function(s){return s.lines().reverse().join('\n');});" value="Reverse sort" title="Reverse current lines sort" />
 		</p>
@@ -705,24 +705,24 @@
 		</li>
 		<li>
 			There are some <strong>keyboard shortcuts</strong> that you may want to use:
+			<ul>
+				<li><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>T</kbd> focuses the input textarea</li>
+				<li><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>J</kbd> and <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>E</kbd> both evaluate the input as JavaScript</li>
+				<li><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>F</kbd> expands the search/replace fieldset and focuses the search textarea</li>
+				<li><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>H</kbd> expands the hash fieldset and focuses the “Hash” button</li>
+				<li><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>B</kbd> expands the base conversion fieldset and focuses the byte conversion button</li>
+				<li><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>N</kbd> expands the base conversion fieldset and focuses the base conversion button</li>
+			</ul>
 		</li>
-		<ul>
-			<li><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>T</kbd> focuses the input textarea</li>
-			<li><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>J</kbd> and <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>E</kbd> both evaluate the input as JavaScript</li>
-			<li><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>F</kbd> expands the search/replace fieldset and focuses the search textarea</li>
-			<li><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>H</kbd> expands the hash fieldset and focuses the “Hash” button</li>
-			<li><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>B</kbd> expands the base conversion fieldset and focuses the byte conversion button</li>
-			<li><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>N</kbd> expands the base conversion fieldset and focuses the base conversion button</li>
-		</ul>
 		<li>
 			When using the function regex/search-replace, the arguments for the functions are:
+			<ul>
+				<li><em>1:</em> The matched expression</li>
+				<li><em>2 to n:</em> The matched subpatterns (not applicable if not in regex mode or when applying the function to pieces)</li>
+				<li><em>n+1:</em> The offset of the matched expression/piece in the original input text</li>
+				<li><em>n+2:</em> The original input text</li>
+			</ul>
 		</li>
-		<ul>
-			<li><em>1:</em> The matched expression</li>
-			<li><em>2 to n:</em> The matched subpatterns (not applicable if not in regex mode or when applying the function to pieces)</li>
-			<li><em>n+1:</em> The offset of the matched expression/piece in the original input text</li>
-			<li><em>n+2:</em> The original input text</li>
-		</ul>
 	</ul>
 
 	<h2 class="bugs">Known bugs</h2>
@@ -731,7 +731,7 @@
 			<a href="http://www.regular-expressions.info/javascript.html" title="JavaScript regular expression flavor">Javascript's regex</a>
 			limitations, like lack of Unicode or lookbehind support
 		</li>
-		<li>Hence, incorrect accented or non-Latin alphabet support, affecting some word-based features (title/camel case, words counting, etc.).</li>
+		<li>As a consequence, incorrect non-ASCII character support, affecting some word-based features (title/camel case, words counting, etc.).</li>
 	</ul>
 
 	<h2 class="credits">Credits for JavaScript implementations</h2>
